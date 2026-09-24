@@ -97,8 +97,13 @@ def build_system_status(registry: ComponentRegistry) -> dict[str, Any]:
         graphify_status = {"available": False, "enabled": False, "error": type(exc).__name__}
 
     from config import CLOUD_LLM_CONFIG
-    cloud_configured = bool(CLOUD_LLM_CONFIG.get("api_url")) and bool(CLOUD_LLM_CONFIG.get("model"))
+    cloud_configured = (
+        bool(CLOUD_LLM_CONFIG.get("enabled"))
+        and bool(CLOUD_LLM_CONFIG.get("api_url"))
+        and bool(CLOUD_LLM_CONFIG.get("model"))
+    )
     cloud_status = {
+        "enabled": bool(CLOUD_LLM_CONFIG.get("enabled")),
         "configured": cloud_configured,
         "api_url": CLOUD_LLM_CONFIG.get("api_url", "")[:50] if cloud_configured else "",
         "model": CLOUD_LLM_CONFIG.get("model", "") if cloud_configured else "",

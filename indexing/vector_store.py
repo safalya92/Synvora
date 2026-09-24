@@ -504,17 +504,18 @@ class VectorStore:
             # Get all data from collection
             all_data = self.collection.get(include=['embeddings', 'metadatas'])
             
-            # Save to pickle file
+            # Save to a non-executable, portable format, including document text.
             export_data = {
                 'collection_name': self.collection_name,
                 'ids': all_data['ids'],
                 'embeddings': all_data['embeddings'],
                 'metadatas': all_data['metadatas'],
+                'documents': all_data.get('documents', []),
                 'export_timestamp': datetime.now().isoformat()
             }
             
-            with open(export_path / 'vector_index.pkl', 'wb') as f:
-                pickle.dump(export_data, f)
+            with open(export_path / 'vector_index.json', 'w', encoding='utf-8') as f:
+                json.dump(export_data, f)
             
             logger.info(f"Vector index exported to: {export_path}")
             
@@ -530,14 +531,21 @@ class VectorStore:
             import_path: Path to import the index from
         """
         try:
-            import_file = Path(import_path) / 'vector_index.pkl'
+            import_file = Path(import_path) / 'vector_index.json'
             
             if not import_file.exists():
                 raise FileNotFoundError(f"Import file not found: {import_file}")
             
-            # Load data
-            with open(import_file, 'rb') as f:
-                import_data = pickle.load(f)
+            with open(import_file, 'r', encoding='utf-8') as f:
+                import_data = json.load(f)
+            required = {'collection_name', 'ids', 'embeddings', 'metadatas', 'documents'}
+            if not isinstance(import_data, dict) or not required.issubset(import_data):
+                raise ValueError('Invalid vector index: missing required fields')
+            if not all(isinstance(import_data[key], list) for key in required - {'collection_name'}):
+                raise ValueError('Invalid vector index: list fields have incorrect types')
+            if not (len(import_data['ids']) == len(import_data['embeddings']) ==
+                    len(import_data['metadatas']) == len(import_data['documents'])):
+                raise ValueError('Invalid vector index: record lengths do not match')
             
             # Clear existing collection
             self.client.delete_collection(self.collection_name)
@@ -553,7 +561,8 @@ class VectorStore:
                 self.collection.add(
                     ids=import_data['ids'],
                     embeddings=import_data['embeddings'],
-                    metadatas=import_data['metadatas']
+                    metadatas=import_data['metadatas'],
+                    documents=import_data['documents']
                 )
             
             logger.info(f"Vector index imported from: {import_path}")

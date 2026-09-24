@@ -37,6 +37,7 @@ vector_db/
 logs/
 models/
 data/uploads/
+data/graphify/
 feedback/feedback_logs/
 *.sqlite3
 *.db

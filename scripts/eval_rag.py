@@ -24,60 +24,9 @@ from indexing.nvidia_nim_embedding_provider import NvidiaNimEmbeddingProvider
 
 COLLECTION_NAME = NIM_EMBEDDING_CONFIG["collection_name"]
 
-# Golden set: query -> set of relevant chunk-id prefixes (12-char).
-# Labeled by hand against live corpus. Relabeled 2026-08-22 after the
-# chunker rotation fix (indexing/text_chunker.py): CV went from 104
-# rotation slivers to 6 real chunks, offer letter gained idx 0-1.
-GOLDEN_SET = [
-    {
-        "query": "What is the GSTIN number of the company?",
-        "relevant": ["9e285bf5223d", "24c07d940faf", "cdc86ac7ddd0"],
-    },
-    {
-        "query": "Where is the candidate located?",
-        "relevant": ["71b730c8159f", "516ddfe69b15"],
-    },
-    {
-        "query": "Who is the managing director?",
-        "relevant": ["71b730c8159f"],
-    },
-    {
-        "query": "What MSME registration does the company have?",
-        "relevant": ["9e285bf5223d", "24c07d940faf", "cdc86ac7ddd0"],
-    },
-    {
-        "query": "What contact email and phone number are listed?",
-        "relevant": ["9e285bf5223d", "24c07d940faf", "cdc86ac7ddd0", "516ddfe69b15"],
-    },
-    {
-        "query": "What agentic AI skills does the candidate have?",
-        "relevant": ["63bd8c8c1311"],
-    },
-    {
-        "query": "Tell me about the geolocation routing engine",
-        "relevant": ["38caffae3e8b"],
-    },
-    {
-        "query": "What backend stack was used for the platform project?",
-        "relevant": ["38caffae3e8b"],
-    },
-    {
-        "query": "What data security clause exists in the offer letter?",
-        "relevant": ["26c7bdd8748c"],
-    },
-    {
-        "query": "What multimodal pipeline did the candidate engineer?",
-        "relevant": ["d93a4d3ba708", "cbd62d23b439"],
-    },
-    {
-        "query": "What is the effective date mentioned in the letter?",
-        "relevant": ["71b730c8159f"],
-    },
-    {
-        "query": "How is token usage tracked across models?",
-        "relevant": ["cbd62d23b439"],
-    },
-]
+GOLDEN_PATH = PROJECT_ROOT / "scripts" / "eval_golden_synthetic.json"
+GOLDEN_DOCUMENT = json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
+GOLDEN_SET = GOLDEN_DOCUMENT["queries"]
 
 TOKEN_RE = re.compile(r"\b\w+\b", re.UNICODE)
 

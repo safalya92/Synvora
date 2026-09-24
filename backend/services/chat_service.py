@@ -83,6 +83,21 @@ def _prepare_chat(
 
     if mode == "cloud":
         from config import CLOUD_LLM_CONFIG
+        if not CLOUD_LLM_CONFIG.get("enabled"):
+            return {
+                "early_return": {
+                    "query": query,
+                    "response": "Cloud mode is disabled by the server administrator.",
+                    "citations": [],
+                    "confidence": 0.0,
+                    "processing_time": time.time() - start,
+                    "sources": sources[:max_docs],
+                    "model_used": "",
+                    "lm_studio_available": lm["lm_studio_reachable"],
+                    "graph_context_used": graph_used,
+                    "graph_warning": graph_warning,
+                }
+            }
         from generation.cloud_generator import CloudGenerator
         llm = CloudGenerator(CLOUD_LLM_CONFIG)
         citation_gen = registry.ensure_generation()[1]  # reuse citation generator

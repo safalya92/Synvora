@@ -75,24 +75,8 @@ export function ChatWorkspace() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("synvora-chat-mode");
-      if (stored === "cloud" || stored === "local") {
-        setMode(stored);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   function handleModeChange(newMode: "local" | "cloud") {
     setMode(newMode);
-    try {
-      localStorage.setItem("synvora-chat-mode", newMode);
-    } catch {
-      /* ignore */
-    }
   }
 
   useEffect(() => {

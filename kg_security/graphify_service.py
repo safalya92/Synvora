@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import ipaddress
 import json
 import os
 import re
@@ -47,7 +48,7 @@ def redact_secrets(text: str) -> str:
         return ""
     out = text
     for pat in SECRET_PATTERNS:
-        out = pat.sub(lambda m: m.group(0).split("=")[0].split(":")[0] + "=[REDACTED]", out)
+        out = pat.sub("[REDACTED]", out)
     # Common env-style values that might leak from stderr
     for key in ("OPENAI_API_KEY", "GRAPHIFY_OPENAI_API_KEY", "API_KEY"):
         out = re.sub(
@@ -62,7 +63,9 @@ def is_loopback_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
         host = (parsed.hostname or "").lower()
-        return host in {"localhost", "127.0.0.1", "::1"} or host.startswith("127.")
+        if host == "localhost":
+            return True
+        return ipaddress.ip_address(host).is_loopback
     except Exception:
         return False
 
@@ -425,7 +428,11 @@ class GraphifyService:
 
     def build_child_env(self) -> Dict[str, str]:
         """Controlled environment for Graphify child processes (no full env dump in logs)."""
-        env = os.environ.copy()
+        env = {
+            key: value
+            for key in ("PATH", "PATHEXT", "SystemRoot", "TEMP", "TMP")
+            if (value := os.environ.get(key))
+        }
         base_url = str(self.config.get("base_url") or "")
         api_key = str(self.config.get("api_key") or "lm-studio")
         model = str(self.config.get("model") or "")

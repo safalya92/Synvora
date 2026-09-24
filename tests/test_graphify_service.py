@@ -215,14 +215,17 @@ def test_is_loopback_url():
     assert is_loopback_url("http://localhost:1234/v1")
     assert is_loopback_url("http://127.0.0.1:1234/v1")
     assert is_loopback_url("http://[::1]:1234/v1")
+    assert not is_loopback_url("http://127.evil.com/v1")
+    assert not is_loopback_url("http://127.0.0.1.evil.com/v1")
     assert not is_loopback_url("http://example.com/v1")
 
 
 def test_redact_secrets():
-    text = "OPENAI_API_KEY=sk-supersecret123 and password=hunter2"
+    text = "OPENAI_API_KEY=sk-supersecret123 and password=hunter2; Bearer abc.def.ghi"
     red = redact_secrets(text)
     assert "sk-supersecret123" not in red
     assert "hunter2" not in red
+    assert "abc.def.ghi" not in red
     assert "REDACTED" in red
 
 

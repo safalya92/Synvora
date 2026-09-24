@@ -518,13 +518,13 @@ class SynvoraLauncher:
                 '--server.headless', 'true',
                 '--browser.gatherUsageStats', 'false',
                 '--server.enableCORS', 'false',
-                '--server.enableXsrfProtection', 'false'
+                '--server.enableXsrfProtection', 'true'
             ]
             
             self.streamlit_process = subprocess.Popen(
                 streamlit_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 text=True,
                 env=env
             )

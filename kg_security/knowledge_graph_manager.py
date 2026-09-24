@@ -14,7 +14,6 @@ import json
 import hashlib
 from dataclasses import dataclass, asdict, field
 from loguru import logger
-import pickle
 
 from config import KG_CONFIG
 
@@ -473,8 +472,9 @@ class KnowledgeGraphManager:
                 'config': self.config
             }
             
-            with open(filepath, 'wb') as f:
-                pickle.dump(graph_data, f)
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(graph_data, f, default=lambda value: value.tolist()
+                          if isinstance(value, np.ndarray) else str(value))
                 
             logger.info(f"Graph saved to {filepath}")
             
@@ -485,9 +485,11 @@ class KnowledgeGraphManager:
     def load_graph(self, filepath: Path) -> None:
         """Load the graph from disk"""
         try:
-            with open(filepath, 'rb') as f:
-                graph_data = pickle.load(f)
-            
+            with open(filepath, 'r', encoding='utf-8') as f:
+                graph_data = json.load(f)
+            required = {'graph', 'embeddings', 'entity_index'}
+            if not isinstance(graph_data, dict) or not required.issubset(graph_data):
+                raise ValueError('Invalid graph file: missing required fields')
             self.graph = nx.node_link_graph(graph_data['graph'])
             self.node_embeddings = {k: np.array(v) if isinstance(v, list) else v 
                                    for k, v in graph_data['embeddings'].items()}

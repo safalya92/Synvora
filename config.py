@@ -59,6 +59,7 @@ LM_STUDIO_CONFIG = {
 
 # Cloud LLM Configuration (OpenAI-compatible endpoint)
 CLOUD_LLM_CONFIG = {
+    "enabled": os.getenv("SYNVORA_CLOUD_LLM_ENABLED", "false").lower() in {"1", "true", "yes", "on"},
     "api_url": os.getenv("SYNVORA_CLOUD_API_URL", ""),
     "api_key": os.getenv("SYNVORA_CLOUD_API_KEY", ""),
     "model": os.getenv("SYNVORA_CLOUD_MODEL", ""),

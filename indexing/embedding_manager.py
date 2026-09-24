@@ -10,10 +10,10 @@ from collections import OrderedDict
 from typing import Any, List, Dict, Union, Optional
 from loguru import logger
 from pathlib import Path
-import pickle
 import hashlib
 from tqdm import tqdm
 import os
+import json
 
 from error_handler import ErrorHandler, ErrorCategory, ErrorSeverity
 from config import NIM_EMBEDDING_CONFIG
@@ -563,8 +563,9 @@ class EmbeddingManager:
     def save_embeddings(self, embeddings_data: List[Dict], save_path: Path):
         """Save embeddings to disk"""
         try:
-            with open(save_path, 'wb') as f:
-                pickle.dump(embeddings_data, f)
+            with open(save_path, 'w', encoding='utf-8') as f:
+                json.dump(embeddings_data, f, default=lambda value: value.tolist()
+                          if isinstance(value, np.ndarray) else str(value))
             logger.info(f"Embeddings saved to: {save_path}")
         except Exception as e:
             logger.error(f"Failed to save embeddings: {e}")
@@ -573,8 +574,10 @@ class EmbeddingManager:
     def load_embeddings(self, load_path: Path) -> List[Dict]:
         """Load embeddings from disk"""
         try:
-            with open(load_path, 'rb') as f:
-                embeddings_data = pickle.load(f)
+            with open(load_path, 'r', encoding='utf-8') as f:
+                embeddings_data = json.load(f)
+            if not isinstance(embeddings_data, list):
+                raise ValueError("Embedding export must contain a JSON list")
             logger.info(f"Embeddings loaded from: {load_path}")
             return embeddings_data
         except Exception as e:
@@ -584,9 +587,10 @@ class EmbeddingManager:
     def save_cache(self) -> None:
         """Save embedding cache to disk"""
         try:
-            cache_file = self.cache_dir / "embedding_cache.pkl"
-            with open(cache_file, 'wb') as f:
-                pickle.dump(self._embedding_cache, f)
+            cache_file = self.cache_dir / "embedding_cache.json"
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(dict(self._embedding_cache), f, default=lambda value: value.tolist()
+                          if isinstance(value, np.ndarray) else str(value))
             logger.info(f"Embedding cache saved to: {cache_file}")
         except Exception as e:
             logger.error(f"Failed to save cache: {e}")
@@ -594,10 +598,16 @@ class EmbeddingManager:
     def load_cache(self) -> None:
         """Load embedding cache from disk"""
         try:
-            cache_file = self.cache_dir / "embedding_cache.pkl"
+            cache_file = self.cache_dir / "embedding_cache.json"
             if cache_file.exists():
-                with open(cache_file, 'rb') as f:
-                    self._embedding_cache = pickle.load(f)
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    cached = json.load(f)
+                if not isinstance(cached, dict):
+                    raise ValueError("Embedding cache must contain a JSON object")
+                self._embedding_cache = _LruCache(self._embedding_cache.maxsize)
+                for key, value in cached.items():
+                    if isinstance(key, str) and isinstance(value, list):
+                        self._embedding_cache[key] = np.asarray(value, dtype=np.float32)
                 logger.info(f"Embedding cache loaded from: {cache_file}")
             else:
                 logger.info("No existing cache found, starting with empty cache")

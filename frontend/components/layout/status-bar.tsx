@@ -60,7 +60,7 @@ export function StatusBar() {
       ) : (
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-surface-2 border border-border text-xs text-muted">
           <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse-dot" />
-          <span className="text-text font-medium">Air-Gapped</span>
+          <span className="text-text font-medium">{system?.offline_mode ? "Air-Gapped" : "Cloud Enabled"}</span>
           <span className="text-border mx-0.5">•</span>
           <span className="font-medium">{docs == null ? "…" : `${docs} docs`}</span>
           <span className="text-border mx-0.5">•</span>
