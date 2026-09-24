@@ -7,10 +7,6 @@
 ## Overview
 Synvora is a production-ready offline multimodal Retrieval-Augmented Generation (RAG) system designed for NTRO's SIH 2025 problem statement. It provides secure, air-gapped document intelligence with advanced multimodal capabilities and enterprise-grade security features.
 
-## Demo:
-
-[![Watch the video](https://img.youtube.com/vi/2qcBRtBl5q8/0.jpg)](https://youtu.be/2qcBRtBl5q8)
-
 ## ✨ Key Features
 
 ### 🔒 **Security & Privacy**
@@ -89,7 +85,7 @@ ChromaDB · embeddings · Whisper · CLIP · LM Studio
 ### Option 1: Automated Installation (Recommended)
 ```bash
 # Clone the repository
-git clone https://github.com/thrishank007/Synvora.git
+git clone https://github.com/safalya92/Synvora.git
 cd Synvora
 
 # Run automated setup
@@ -239,7 +235,7 @@ pytest backend/tests -q
 ### Option 2: Manual Installation
 ```bash
 # Clone repository
-git clone https://github.com/thrishank007/Synvora.git
+git clone https://github.com/safalya92/Synvora.git
 cd Synvora
 
 # Create virtual environment
@@ -547,7 +543,7 @@ python build_executables.py --usb-deployment
 ### Development Setup
 ```bash
 # Clone for development
-git clone https://github.com/thrishank007/Synvora.git
+git clone https://github.com/safalya92/Synvora.git
 cd Synvora
 
 # Install development dependencies
