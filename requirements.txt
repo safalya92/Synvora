@@ -1,0 +1,77 @@
+# Core RAG Framework
+# raganything[all]  # Commented out due to dependency conflicts
+
+# Multimodal Embeddings
+sentence-transformers
+# clip-by-openai  # Replaced with transformers CLIP
+transformers
+torch
+torchvision
+
+# Vector Database
+chromadb
+
+# Document Processing
+PyMuPDF
+python-docx
+pytesseract
+Pillow
+
+# Audio Processing
+openai-whisper
+librosa
+soundfile
+
+# LM Studio API (Primary LLM Interface)
+requests>=2.28.0  # For LM Studio API calls
+urllib3>=1.26.0   # HTTP library for requests
+
+# HuggingFace Models (Optional fallback when LM Studio is not available)
+# Note: These are now optional since we primarily use LM Studio
+accelerate>=0.21.0  # Optional: For HuggingFace model acceleration
+bitsandbytes>=0.41.0  # Optional: For model quantization
+transformers>=4.44.0  # Optional: For HuggingFace transformers
+torch>=2.0.0  # Optional: PyTorch for local models
+torchvision>=0.15.0  # Optional: Computer vision operations
+tokenizers>=0.15.0  # Optional: Tokenizer support
+safetensors>=0.3.0  # Optional: Safe tensor format
+huggingface-hub>=0.17.0  # Optional: HuggingFace model hub
+# Additional dependencies for multimodal models (Optional)
+timm>=0.9.0  # Optional: For vision transformers
+einops>=0.7.0  # Optional: For tensor operations
+# flash-attn>=2.0.0  # Optional: For flash attention (commented out, GPU only)
+
+# Knowledge Graph
+networkx
+plotly
+pyvis
+
+# Optional analytics dashboard (product UI is Next.js)
+streamlit
+
+# FastAPI service layer (Next.js frontend)
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+httpx>=0.27.0
+
+# Evaluation
+ragas
+datasets
+
+# Utilities
+numpy
+pandas
+scikit-learn
+tqdm
+loguru
+
+# Packaging
+pyinstaller
+auto-py-to-exe
+
+# Development
+pytest
+black
+flake8
+rank-bm25>=0.2.2

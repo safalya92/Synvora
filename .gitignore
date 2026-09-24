@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# Node / frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/.turbo/
+frontend/coverage/
+
+# Build / generated app data
+cache/
+vector_db/
+logs/
+models/
+data/uploads/
+feedback/feedback_logs/
+*.sqlite3
+*.db
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local tooling / test artifacts
+*.log
+*.tmp
+*.bak
