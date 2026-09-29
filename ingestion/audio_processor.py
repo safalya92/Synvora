@@ -1,9 +1,6 @@
 """
 Audio processing module for speech-to-text conversion
 """
-import whisper
-import librosa
-import soundfile as sf
 from pathlib import Path
 from typing import Dict, List, Optional
 from loguru import logger
@@ -17,14 +14,22 @@ class AudioProcessor:
         self.supported_formats = {'.wav', '.mp3', '.m4a', '.flac', '.ogg'}
         self.model_size = model_size
         self.model = None
-        self._load_model()
     
     def _load_model(self):
         """Load Whisper model for offline STT"""
+        if self.model is not None:
+            return
         try:
+            import whisper
+
             logger.info(f"Loading Whisper {self.model_size} model...")
             self.model = whisper.load_model(self.model_size)
             logger.info("Whisper model loaded successfully")
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "Audio ingestion requires the openai-whisper package. "
+                "Install dependencies from requirements.txt and retry."
+            ) from exc
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")
             raise
@@ -47,6 +52,15 @@ class AudioProcessor:
             raise ValueError(f"Unsupported audio format: {suffix}")
         
         try:
+            self._load_model()
+            try:
+                import librosa
+            except ModuleNotFoundError as exc:
+                raise RuntimeError(
+                    "Audio ingestion requires librosa. Install dependencies from "
+                    "requirements.txt and retry."
+                ) from exc
+
             # Load audio file
             audio_data, sample_rate = librosa.load(audio_path, sr=None)
             duration = len(audio_data) / sample_rate
@@ -100,6 +114,22 @@ class AudioProcessor:
             Dict containing audio features
         """
         try:
+            try:
+                import librosa
+            except ModuleNotFoundError as exc:
+                raise RuntimeError(
+                    "Audio feature extraction requires librosa. Install dependencies "
+                    "from requirements.txt and retry."
+                ) from exc
+
+            try:
+                import librosa
+            except ModuleNotFoundError as exc:
+                raise RuntimeError(
+                    "Audio feature extraction requires librosa. Install dependencies "
+                    "from requirements.txt and retry."
+                ) from exc
+
             # Load audio
             audio_data, sample_rate = librosa.load(audio_path, sr=None)
             

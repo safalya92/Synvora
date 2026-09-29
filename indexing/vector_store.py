@@ -24,6 +24,13 @@ def _default_collection_name() -> str:
         return NIM_EMBEDDING_CONFIG["collection_name"]
     return CHROMA_CONFIG["collection_name"]
 
+
+def _metadata_where(filters: Optional[Dict]) -> Optional[Dict]:
+    if not filters:
+        return None
+    conditions = [{key: value} for key, value in filters.items()]
+    return conditions[0] if len(conditions) == 1 else {"$and": conditions}
+
 from .memory_manager import MemoryManager, ProgressiveLoader, MemoryOptimizer
 from .performance_benchmarker import PerformanceBenchmarker
 
@@ -281,18 +288,14 @@ class VectorStore:
                 # Prepare query
                 query_embeddings = [optimized_query.tolist()]
                 
-                # Build where clause for filtering
-                where_clause = {}
-                if filters:
-                    for key, value in filters.items():
-                        where_clause[key] = value
+                where_clause = _metadata_where(filters)
                 
                 # Perform search with more results to filter by threshold
                 search_k = min(k * 3, 100)  # Get more results to filter
                 results = self.collection.query(
                     query_embeddings=query_embeddings,
                     n_results=search_k,
-                    where=where_clause if where_clause else None,
+                    where=where_clause,
                     include=['documents', 'metadatas', 'distances']  # Include documents in results
                 )
                 
@@ -405,7 +408,8 @@ class VectorStore:
             logger.error(f"Failed to perform cross-modal search: {e}")
             return []
     
-    def bm25_search(self, query: str, k: int = 20) -> List[Dict]:
+    def bm25_search(self, query: str, k: int = 20,
+                    filters: Optional[Dict] = None) -> List[Dict]:
         """BM25 keyword search over all documents in the collection.
 
         Fetches all docs from Chroma, builds an in-memory BM25Okapi index, and
@@ -418,7 +422,10 @@ class VectorStore:
             from rank_bm25 import BM25Okapi
             import re
 
-            data = self.collection.get(include=["documents", "metadatas"])
+            get_kwargs = {"include": ["documents", "metadatas"]}
+            if filters:
+                get_kwargs["where"] = _metadata_where(filters)
+            data = self.collection.get(**get_kwargs)
             ids = data.get("ids") or []
             docs = data.get("documents") or []
             metas = data.get("metadatas") or []

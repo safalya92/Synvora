@@ -71,6 +71,33 @@ def test_chat_empty_query(client):
     assert r.status_code == 422
 
 
+def test_chat_title_query_searches_first_page(monkeypatch):
+    from backend.services import chat_service
+
+    registry = MagicMock()
+    registry.ensure_generation.return_value = (MagicMock(), MagicMock())
+    search_args = {}
+
+    def fake_search(_registry, **kwargs):
+        search_args.update(kwargs)
+        return {"raw_results": [], "results": []}
+
+    monkeypatch.setattr(chat_service, "probe_lm_studio", lambda: {"lm_studio_reachable": True})
+    monkeypatch.setattr(chat_service, "search", fake_search)
+
+    chat_service._prepare_chat(
+        registry,
+        query="What is the heading of the paper?",
+        similarity_threshold=None,
+        max_docs=5,
+        use_knowledge_graph=False,
+        mode="local",
+    )
+
+    assert search_args["filters"] == {"page": 1, "chunk_index": 0}
+    assert search_args["similarity_threshold"] == 0.0
+
+
 def test_chat_stream_early_return_sse(client, monkeypatch):
     """LM Studio unreachable: SSE carries retrieval + message + done, no tokens."""
     from backend.services import chat_service

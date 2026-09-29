@@ -38,12 +38,13 @@ def search(
     k: Optional[int] = None,
     image_path: Optional[str] = None,
     audio_path: Optional[str] = None,
+    filters: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     _, _, query_processor = registry.ensure_vector_stack()
     if query_processor is None:
         raise RuntimeError("Query processor unavailable")
 
-    if similarity_threshold is not None:
+    if similarity_threshold is not None and modality != "text":
         query_processor.update_similarity_threshold(similarity_threshold)
 
     transcription = None
@@ -51,7 +52,12 @@ def search(
     if modality == "text":
         if not query.strip():
             raise ValueError("Query text is required")
-        result = query_processor.process_text_query(query, k=k)
+        result = query_processor.process_text_query(
+            query,
+            k=k,
+            filters=filters,
+            similarity_threshold=similarity_threshold,
+        )
     elif modality == "image":
         if not image_path:
             raise ValueError("Image file is required for image search")

@@ -227,7 +227,8 @@ class QueryProcessor:
     # ── Main query methods ───────────────────────────────────────────────────
 
     def process_text_query(self, query: str, filters: Optional[Dict] = None,
-                           k: int = None) -> QueryResult:
+                           k: int = None,
+                           similarity_threshold: Optional[float] = None) -> QueryResult:
         """
         Process a text query and return relevant results.
 
@@ -264,8 +265,14 @@ class QueryProcessor:
 
             # Dense retrieval — fetch more candidates when hybrid (pre-RRF)
             dense_k = k * 3 if use_hybrid else k
+            minimum_similarity = (
+                self.similarity_threshold if similarity_threshold is None else similarity_threshold
+            )
             dense_results = self.vector_store.similarity_search(
-                query_embedding, k=dense_k, filters=filters
+                query_embedding,
+                k=dense_k,
+                filters=filters,
+                similarity_threshold=minimum_similarity,
             )
 
             # Optional cross-encoder reranking: rerank a wider fused
@@ -274,7 +281,7 @@ class QueryProcessor:
             rerank_candidates = self.config.get('rerank_candidates', 20)
 
             if use_hybrid:
-                bm25_results = self.vector_store.bm25_search(query, k=bm25_k)
+                bm25_results = self.vector_store.bm25_search(query, k=bm25_k, filters=filters)
                 if bm25_results:
                     merge_k = max(k, rerank_candidates) if reranker else k
                     search_results = self._rrf_merge(

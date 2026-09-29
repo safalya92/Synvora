@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from retrieval.query_processor import QueryProcessor
-from indexing.vector_store import VectorStore
+from indexing.vector_store import VectorStore, _metadata_where
 
 
 def test_rrf_merge_combines_ranks_correctly():
@@ -52,6 +52,31 @@ def test_bm25_search_ranks_matching_documents():
     assert results[0]["metadata"]["cat"] == "security"
 
 
+def test_bm25_search_applies_metadata_filters():
+    vector_store = VectorStore.__new__(VectorStore)
+    mock_collection = MagicMock()
+    mock_collection.get.return_value = {
+        "ids": ["cover"],
+        "documents": ["Document heading"],
+        "metadatas": [{"page": 1}],
+    }
+    vector_store.collection = mock_collection
+
+    filters = {"page": 1, "chunk_index": 0}
+    vector_store.bm25_search("heading", k=5, filters=filters)
+
+    mock_collection.get.assert_called_once_with(
+        include=["documents", "metadatas"],
+        where={"$and": [{"page": 1}, {"chunk_index": 0}]},
+    )
+
+
+def test_metadata_where_wraps_multiple_fields_in_and():
+    assert _metadata_where({"page": 1, "chunk_index": 0}) == {
+        "$and": [{"page": 1}, {"chunk_index": 0}]
+    }
+
+
 def test_process_text_query_hybrid_flow():
     class DummyEmbeddingManager:
         text_embedding_model = "test-model"
@@ -74,7 +99,8 @@ def test_process_text_query_hybrid_flow():
     class DummyVectorStore:
         collection = DummyCollection()
 
-        def similarity_search(self, query_emb, k, filters):
+        def similarity_search(self, query_emb, k, filters, similarity_threshold=None):
+            self.last_dense_filters = filters
             return [
                 {
                     "id": "doc1",
@@ -85,7 +111,8 @@ def test_process_text_query_hybrid_flow():
                 }
             ]
 
-        def bm25_search(self, query, k):
+        def bm25_search(self, query, k, filters=None):
+            self.last_bm25_filters = filters
             return [
                 {
                     "id": "doc2",
@@ -110,9 +137,14 @@ def test_process_text_query_hybrid_flow():
         },
     )
 
-    res = processor.process_text_query("delta gamma")
+    page_filter = {"page": 1}
+    res = processor.process_text_query(
+        "delta gamma", filters=page_filter, similarity_threshold=0.0
+    )
     assert res.query_type == "hybrid"
     assert len(res.results) == 2
     doc_ids = [r["document_id"] for r in res.results]
     assert "doc1" in doc_ids
     assert "doc2" in doc_ids
+    assert processor.vector_store.last_dense_filters == page_filter
+    assert processor.vector_store.last_bm25_filters == page_filter

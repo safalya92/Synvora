@@ -76,7 +76,7 @@ def test_query_processor_uses_query_embedding_mode():
     class VectorStoreStub:
         collection = Collection()
 
-        def similarity_search(self, query_embedding, k, filters):
+        def similarity_search(self, query_embedding, k, filters, similarity_threshold=None):
             return []
 
     embedding_manager = EmbeddingManager()

@@ -1,6 +1,7 @@
 """Chat: retrieve + generate + cite using domain generators."""
 from __future__ import annotations
 
+import re
 import time
 from typing import Any, Generator, Optional
 
@@ -42,12 +43,14 @@ def _prepare_chat(
     graph_warning: Optional[str] = None
     graph_used = False
 
+    title_query = re.search(r"\b(title|heading)\b", query, re.IGNORECASE) is not None
     search_payload = search(
         registry,
         query=query,
         modality="text",
-        similarity_threshold=similarity_threshold,
+        similarity_threshold=0.0 if title_query else similarity_threshold,
         k=max_docs,
+        filters={"page": 1, "chunk_index": 0} if title_query else None,
     )
     raw_results = search_payload.get("raw_results") or []
     sources = search_payload.get("results") or []

@@ -59,7 +59,7 @@ LM_STUDIO_CONFIG = {
 
 # Cloud LLM Configuration (OpenAI-compatible endpoint)
 CLOUD_LLM_CONFIG = {
-    "enabled": os.getenv("SYNVORA_CLOUD_LLM_ENABLED", "false").lower() in {"1", "true", "yes", "on"},
+    "enabled": False,
     "api_url": os.getenv("SYNVORA_CLOUD_API_URL", ""),
     "api_key": os.getenv("SYNVORA_CLOUD_API_KEY", ""),
     "model": os.getenv("SYNVORA_CLOUD_MODEL", ""),
@@ -306,12 +306,18 @@ PERFORMANCE_CONFIG = {
 }
 
 # Model download configuration
+OFFLINE_MODE = os.getenv("SYNVORA_OFFLINE_MODE")
+if OFFLINE_MODE is None:
+    OFFLINE_MODE = not ONLINE_FIRST
+else:
+    OFFLINE_MODE = OFFLINE_MODE.strip().lower() in {"1", "true", "yes", "on"}
+
 MODEL_DOWNLOAD_CONFIG = {
     "use_auth_token": False,
     "cache_dir": str(MODELS_DIR),
     "force_download": False,
     "resume_download": True,
-    "local_files_only": False,  # Set to True for offline mode
+    "local_files_only": bool(OFFLINE_MODE),
     "revision": "main"
 }
 

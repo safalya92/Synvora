@@ -16,7 +16,7 @@ import os
 import json
 
 from error_handler import ErrorHandler, ErrorCategory, ErrorSeverity
-from config import NIM_EMBEDDING_CONFIG
+from config import NIM_EMBEDDING_CONFIG, MODEL_DOWNLOAD_CONFIG
 from indexing.nvidia_nim_embedding_provider import NvidiaNimEmbeddingProvider
 
 
@@ -134,6 +134,34 @@ class EmbeddingManager:
         text_repr = str(texts).strip()
         return [text_repr] if text_repr else []
 
+    def _model_load_kwargs(self, model_name: str, *, use_cache_folder: bool = False) -> Dict[str, Any]:
+        """Return local/offline-friendly kwargs for Hugging Face model loads."""
+        local_only = bool(MODEL_DOWNLOAD_CONFIG.get("local_files_only", False))
+        env_value = (os.getenv("HF_HUB_OFFLINE") or "").strip().lower()
+        if env_value in {"1", "true", "yes", "on"}:
+            local_only = True
+
+        if local_only:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            os.environ["TRANSFORMERS_OFFLINE"] = "1"
+            logger.info(f"Offline mode enabled for {model_name}; using cached Hugging Face files only")
+
+        cache_dir = Path(MODEL_DOWNLOAD_CONFIG.get("cache_dir") or str(self.cache_dir))
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        if use_cache_folder:
+            return {
+                "cache_folder": str(cache_dir),
+                "local_files_only": local_only,
+                "revision": MODEL_DOWNLOAD_CONFIG.get("revision", "main"),
+            }
+
+        return {
+            "cache_dir": str(cache_dir),
+            "local_files_only": local_only,
+            "revision": MODEL_DOWNLOAD_CONFIG.get("revision", "main"),
+        }
+
     def _load_models(self):
         """Load embedding models with error handling"""
         try:
@@ -142,7 +170,8 @@ class EmbeddingManager:
                 self.nim_embedding_provider = NvidiaNimEmbeddingProvider(NIM_EMBEDDING_CONFIG)
             else:
                 logger.info("Loading text embedding model...")
-                self.text_model = SentenceTransformer('all-MiniLM-L6-v2')
+                text_kwargs = self._model_load_kwargs('all-MiniLM-L6-v2', use_cache_folder=True)
+                self.text_model = SentenceTransformer('all-MiniLM-L6-v2', **text_kwargs)
                 logger.info(f"Text model loaded successfully: {type(self.text_model)}")
                 
                 try:
@@ -156,8 +185,9 @@ class EmbeddingManager:
             
             # Load CLIP model
             logger.info("Loading CLIP model...")
-            self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-            self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+            clip_kwargs = self._model_load_kwargs('openai/clip-vit-base-patch32')
+            self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", **clip_kwargs)
+            self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", **clip_kwargs)
             logger.info(f"CLIP model loaded successfully: {type(self.clip_model)}")
             
             try:
@@ -183,9 +213,11 @@ class EmbeddingManager:
                 try:
                     # Retry loading with CPU
                     logger.info("Retrying model loading with CPU...")
-                    self.text_model = SentenceTransformer('all-MiniLM-L6-v2').to('cpu')
-                    self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to('cpu')
-                    self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+                    text_kwargs = self._model_load_kwargs('all-MiniLM-L6-v2', use_cache_folder=True)
+                    self.text_model = SentenceTransformer('all-MiniLM-L6-v2', **text_kwargs).to('cpu')
+                    clip_kwargs = self._model_load_kwargs('openai/clip-vit-base-patch32')
+                    self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", **clip_kwargs).to('cpu')
+                    self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", **clip_kwargs)
                     logger.info("Successfully loaded models with CPU fallback")
                     logger.info(f"Final model types after CPU fallback - Text: {type(self.text_model)}, CLIP: {type(self.clip_model)}")
                 except Exception as fallback_error:

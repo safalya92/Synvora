@@ -6,7 +6,6 @@ import {
   Brain,
   Check,
   ChevronRight,
-  Cloud,
   Compass,
   Database,
   ExternalLink,
@@ -60,7 +59,7 @@ function getSourceIcon(type?: string) {
 export function ChatWorkspace() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"local" | "cloud">("local");
+  const mode = "local" as const;
   const [threshold, setThreshold] = useState(0.5);
   const [maxDocs, setMaxDocs] = useState(5);
   const [useKnowledgeGraph, setUseKnowledgeGraph] = useState(false);
@@ -74,10 +73,6 @@ export function ChatWorkspace() {
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  function handleModeChange(newMode: "local" | "cloud") {
-    setMode(newMode);
-  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -298,7 +293,7 @@ export function ChatWorkspace() {
                   : "bg-sky-500/10 text-sky-400 border-sky-500/30",
               )}>
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>{mode === "local" ? "Air-Gapped Local LM Studio (Offline)" : "Cloud LLM Mode (API Fallback)"}</span>
+                <span>Air-Gapped Local LM Studio (Offline)</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-text">
@@ -339,31 +334,6 @@ export function ChatWorkspace() {
                       >
                         <GitBranch className="h-3.5 w-3.5" />
                         <span>Graph Context</span>
-                      </button>
-
-                      {/* Engine Quick Switcher inside Capsule */}
-                      <button
-                        type="button"
-                        onClick={() => handleModeChange(mode === "local" ? "cloud" : "local")}
-                        className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none",
-                          mode === "local"
-                            ? "bg-teal-500/15 text-teal-400 border-teal-500/40 hover:bg-teal-500/25"
-                            : "bg-sky-500/15 text-sky-400 border-sky-500/40 hover:bg-sky-500/25",
-                        )}
-                        title="Click to toggle Local vs Cloud Engine"
-                      >
-                        {mode === "local" ? (
-                          <>
-                            <Zap className="h-3.5 w-3.5 text-teal-400" />
-                            <span>Local</span>
-                          </>
-                        ) : (
-                          <>
-                            <Cloud className="h-3.5 w-3.5 text-sky-400" />
-                            <span>Cloud</span>
-                          </>
-                        )}
                       </button>
 
                       {/* Config Button */}
@@ -618,25 +588,13 @@ export function ChatWorkspace() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => handleModeChange(mode === "local" ? "cloud" : "local")}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none",
-                      mode === "local"
-                        ? "bg-teal-500/15 text-teal-400 border border-teal-500/40"
-                        : "bg-sky-500/15 text-sky-400 border border-sky-500/40",
+                      "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold",
+                      "bg-teal-500/15 text-teal-400 border border-teal-500/40",
                     )}
                   >
-                    {mode === "local" ? (
-                      <>
-                        <Zap className="h-3.5 w-3.5 text-teal-400" />
-                        <span>Local (LM Studio)</span>
-                      </>
-                    ) : (
-                      <>
-                        <Cloud className="h-3.5 w-3.5 text-sky-400" />
-                        <span>Cloud LLM</span>
-                      </>
-                    )}
+                    <Zap className="h-3.5 w-3.5 text-teal-400" />
+                    <span>Local (LM Studio)</span>
                   </button>
 
                   <button
