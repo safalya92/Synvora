@@ -9,6 +9,19 @@ from loguru import logger
 from config import CHROMA_CONFIG, CLIP_IMAGE_CONFIG, LLM_CONFIG, NIM_EMBEDDING_CONFIG, SEARCH_CONFIG
 
 
+class _UnavailableEmbeddingManager:
+    """Marker used to keep lexical retrieval available without HF models."""
+
+    uses_nim_embeddings = False
+    text_embedding_model = "unavailable"
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+
+    def embed_query(self, query: str):
+        raise RuntimeError(f"Text embeddings unavailable: {self.reason}")
+
+
 class ComponentRegistry:
     """Process-wide lazy holders for Synvora domain components."""
 
@@ -56,7 +69,14 @@ class ComponentRegistry:
                 from indexing.embedding_manager import EmbeddingManager
 
                 logger.info("Initializing embedding manager...")
-                self.embedding_manager = EmbeddingManager()
+                try:
+                    self.embedding_manager = EmbeddingManager()
+                except Exception as exc:
+                    logger.warning(
+                        "Embedding models unavailable; continuing with BM25-only retrieval: {}",
+                        exc,
+                    )
+                    self.embedding_manager = _UnavailableEmbeddingManager(str(exc))
 
             if self.vector_store is None:
                 from indexing.vector_store import VectorStore

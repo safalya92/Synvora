@@ -254,14 +254,33 @@ class QueryProcessor:
                     logger.info(f"Rewrote query from '{query}' to '{rewritten}'")
                     query = rewritten
 
-            # Dense embedding
-            query_embedding = self.embedding_manager.embed_query(query)[0]
-
             use_hybrid = self.config.get('enable_hybrid', True)
             bm25_k = self.config.get('bm25_k', 20)
             rrf_k = self.config.get('rrf_k', 20)
             dense_weight = self.config.get('dense_weight', 0.9)
             sparse_weight = self.config.get('sparse_weight', 0.1)
+
+            # Keep keyword retrieval usable when local embedding files are
+            # unavailable in an offline deployment.
+            try:
+                query_embedding = self.embedding_manager.embed_query(query)[0]
+            except Exception as embedding_error:
+                logger.warning("Dense retrieval unavailable; using BM25 only: %s", embedding_error)
+                search_results = self.vector_store.bm25_search(query, k=k, filters=filters)
+                filtered_results = [
+                    result for result in search_results
+                    if result.get('bm25_score', 0.0) > 0
+                ]
+                formatted_results = self._format_search_results(filtered_results)
+                processing_time = (datetime.now() - start_time).total_seconds()
+                return QueryResult(
+                    query=query,
+                    results=formatted_results,
+                    query_type='bm25',
+                    processing_time=processing_time,
+                    total_results=len(filtered_results),
+                    similarity_threshold=self.similarity_threshold,
+                )
 
             # Dense retrieval — fetch more candidates when hybrid (pre-RRF)
             dense_k = k * 3 if use_hybrid else k
